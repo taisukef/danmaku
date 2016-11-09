@@ -1,0 +1,160 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'/>
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0"/>
+<title>danmaku</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta property="og:image" content="ss.png"/>
+<link rel="apple-touch-icon" href="icon.png"/>
+<script src="fukuno.js"></script>
+<script>'use strict';
+window.onload = function() {
+	var canvas = get("canvas");
+	var g = getContext(canvas);
+	var fire = [];
+	var score = 0;
+	var highscore = 0;
+	var game = false;
+	canvas.onmouseout = function() {
+		if (game) {
+			game = false;
+		}
+	};
+	canvas.onclick = function() {
+		if (!game) {
+			game = true;
+			score = 0;
+			init();
+		}
+	};
+	var mx, my;
+	canvas.onmousemove = function(e) {
+		mx = e.x;
+		my = e.y;
+	};
+	var init = function() {
+		fire = [];
+	};
+	var contains = function(x1, y1, x2, y2, r) {
+		var dx = x1 - x2;
+		var dy = y1 - y2;
+		return dx * dx + dy * dy < r * r;
+	};
+	g.draw = function() {
+		var g = this;
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight + 1;
+		g.cw = canvas.width;
+		g.ch = canvas.height;
+		console.log(g.ch);
+		
+		var gw = g.cw;
+		var gh = g.ch;
+		if (game)
+			g.setColor(0, 0, 0);
+		else
+			g.setColor(128, 128, 128);
+		g.fillRect(0, 0, gw, gh);
+		if (!game) {
+			g.setColor(255, 255, 255);
+			g.font = "normal 40px monospace";
+			var s = "DANMAKU";
+			var met = g.measureText(s);
+			g.fillText(s, (gw - met.width) / 2 >> 0, (gh / 2 >> 0) - 20);
+			
+			g.font = "normal 22px monospace";
+			var s = "CLICK TO START";
+			var met = g.measureText(s);
+			g.fillText(s, (gw - met.width) / 2 >> 0, (gh / 2 >> 0) + 20);
+		}
+		if (Math.random() < gw / 1000 * 0.05) {
+			var x, y;
+			for (;;) {
+				x = Math.random() * gw;
+				y = Math.random() * gh;
+				if (!contains(x, y, mx, my, gw / 30)) // org:30
+					break;
+			}
+			var delay = 0;
+			var nr = Math.random() * 50 + 20 >> 0;
+			var npc = Math.random() < .5 ? Math.random() * nr / 6 : Math.random() * nr * 2;
+			for (var i = 0; i < nr; i++) {
+				var p = {};
+				p.x = x;
+				p.y = y;
+				var th = i / npc * Math.PI * 2;
+				var v = 2; //(j + 1) * .17;
+				p.vx = Math.cos(th) * v;
+				p.vy = Math.sin(th) * v;
+				p.r = 4; // v * 2;
+				p.t = 100;
+				p.delay = delay++;
+				for (var k = 0; k < fire.length + 1; k++)
+					if (fire[k] == null) {
+						fire[k] = p;
+						break;
+					}
+			}
+		}
+		for (var i = 0; i < fire.length; i++) {
+			var p = fire[i];
+			if (p == null)
+				continue;
+			if (p.delay > 0) {
+				p.delay--;
+				continue;
+			}
+		
+			var n = p.t > 20 ? 1 : 1 - 1 * (20 - p.t) / 20;
+			g.setColor(255, 255, 255, n); //n, n, n);
+			g.fillCircle(p.x, p.y, p.r);
+			p.x += p.vx;
+			p.y += p.vy;
+			p.t--;
+			if (p.t > 20) {
+				if (contains(p.x, p.y, mx, my, 3))
+					game = false;
+			}
+			if (p.t == 0) {
+				fire[i] = null;
+			}
+		}
+		if (game)
+			score += 10;
+		if (score >= highscore)
+			highscore = score;
+		g.setColor(255, 255, 255);
+		g.font = "normal 20px monospace";
+		var s = "SCORE: " + addComma(score) + " HI SCORE: " + addComma(highscore);
+		var met = g.measureText(s);
+		g.fillText(s, 10, 10 + 20);
+	};
+	setInterval(function() {
+		g.draw();
+	}, 15);
+	g.init();
+};
+</script>
+<style>
+body {
+	margin: 0px;
+}
+#canvas {
+	cursor: default;
+}
+#main {
+	text-align: center;
+}
+a {
+	color: gray !important;
+}
+</style>
+</head>
+<body>
+
+<div id="main"><canvas id="canvas"></canvas><br></div>
+
+<div id="src">
+APP： CC BY <a href=http://fukuno.jig.jp/1569 target=_blank>fukuno.jig.jp</a> (org: <a href=http://fukuno.jig.jp/2012/danmaku>danmaku 2012</a>)<br>
+</div>
+
+</body>
+</html>
